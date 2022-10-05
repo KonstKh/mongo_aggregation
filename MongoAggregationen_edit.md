@@ -3,20 +3,20 @@ Praktische MongoDb Aggregationen
 - [Definition](#definition)
   - [Kompositionsfähigkeit für mehr Produktivität](#kompositionsfähigkeit-für-mehr-produktivität)
   - [Bessere Alternativen zu einer $project -Stage](#bessere-alternativen-zu-einer-project--stage)
-  - [Wann sollte man \$set & \$unset verwenden?](#wann-sollte-man-set--unset-verwenden)
+  - [Wann \$set & \$unset zu verwenden sind?](#wann-sollte-man-set--unset-verwenden)
     - [Wann \$project zu verwenden ist](#wann-project-zu-verwenden-ist)
   - [Verwendung von Explain-Plänen](#verwendung-von-explain-plänen)
     - [Den Explain-Plan verstehen](#den-explain-plan-verstehen)
 - [Überlegungen zur Pipeline-Leistung](#überlegungen-zur-pipeline-leistung)
   - [1. Beachten Sie die Reihenfolge von Streaming und Blocking Stage](#1-beachten-sie-die-reihenfolge-von-streaming-und-blocking-stage)
-  - [\$sort Speicherverbrauch und Schadensbegrenzung](#sort-speicherverbrauch-und-schadensbegrenzung)
-  - [\$group-Speicherverbrauch und Schadensbegrenzung](#group-speicherverbrauch-und-schadensbegrenzung)
+  - [\$sort Speicherverbrauch und Risikominderung](#sort-speicherverbrauch-und-schadensbegrenzung)
+  - [\$group-Speicherverbrauch und Risikominderung vielleicht](#group-speicherverbrauch-und-schadensbegrenzung)
 - [Erklärung und Verwendung von Ausdrücken](#erklärung-und-verwendung-von-ausdrücken)
   - [Was erzeugen Ausdrücke?](#was-erzeugen-ausdrücke)
     - [Können alle Stufen Ausdrücke verwenden?](#können-alle-stufen-ausdrücke-verwenden)
   - [Einschränkungen bei der Verwendung von Ausdrücken mit $match](#einschränkungen-bei-der-verwendung-von-ausdrücken-mit-match)
   - [Sharding-Betrachtung TBD](#sharding-betrachtung-tbd)
-  - [Advanced Use Of Expressions For Array Processing](#advanced-use-of-expressions-for-array-processing)
+  - [Erweiterte Verwendung von Expressions für die Array-Verarbeitung](#advanced-use-of-expressions-for-array-processing)
 
 Definition des Aggregation Frameworks: 
 <ul>
@@ -120,11 +120,11 @@ Die Struktur jedes Ausgabedokuments muss sich stark von der Struktur der Eingabe
     ]
 </code>
 
-Zusammenfassend lässt sich sagen, dass \$set (oder \$addFields) und \$unset für die Einbeziehung und den Ausschluss von Feldern immer verwenden werden, statt \$project. Die wichtigste Ausnahme ist, wenn Sie eine offensichtliche Anforderung für eine sehr unterschiedliche Struktur für Ergebnisdokumente haben, bei der Sie nur eine kleine Teilmenge der Eingabefelder beibehalten müssen.
+Zusammenfassend lässt sich sagen, dass \$set (oder \$addFields) und \$unset für die Einbeziehung und den Ausschluss von Feldern immer statt \$project verwenden werden sollten. Die wichtigste Ausnahme ist, wenn Sie eine offensichtliche Anforderung für eine sehr unterschiedliche Struktur für Ergebnisdokumente haben, bei der Sie nur eine kleine Teilmenge der Eingabefelder beibehalten müssen.
 
 ### Verwendung von Explain-Plänen
 
-Um den Explain-Plan für eine Aggregationspipeline anzuzeigen, den folgenden Befehle können ausführen werden:
+Um den Explain-Plan für eine Aggregationspipeline anzuzeigen, kann der folgende Befehl ausgeführt werden:
 
 <code>
     
@@ -146,7 +146,7 @@ Wie bei MQL gibt es drei verschiedene Ausführlichkeitsmodi, mit denen Sie einen
 </code>
 
 In den meisten Fällen werden Sie feststellen, dass die Variante executionStats der informativste Modus ist. Sie zeigt nicht nur den Denkprozess des Abfrageplaners, sondern liefert auch tatsächliche Statistiken über den "erfolgreichen" Ausführungsplan (z. B. die insgesamt untersuchten Schlüssel, die insgesamt untersuchten Dokumente usw.). Dies ist jedoch nicht die Standardeinstellung, da zusätzlich zur Formulierung des Abfrageplans auch die Aggregation ausgeführt wird (However, this isn't the default because it actually executes the aggregation in addition to formulating the query plan.). Wenn die Quellenkollektion groß oder die Pipeline suboptimal ist, wird es eine Weile dauern, bis das Ergebnis des Explain-Plans zurückgegeben wird.
-Beachten Sie, dass die aggregate()-Funktion auch eine rudimentäre explain-Option bietet, mit der ein explain-Plan erstellt und zurückgegeben werden kann. Diese ist jedoch eingeschränkter und umständlicher in der Anwendung, so dass Sie sie vermeiden sollten.
+Es sollte darauf geachtet werden, dass die aggregate()-Funktion auch eine rudimentäre explain-Option bietet, mit der ein explain-Plan erstellt und zurückgegeben werden kann. Diese ist jedoch eingeschränkter und umständlicher in der Anwendung, so dass Sie sie vermeiden sollten.
 
 #### Den Explain-Plan verstehen
 Die Sammlung der Kundenaufträge enthält Dokumente ähnlich dem folgenden Beispiel:
@@ -206,7 +206,7 @@ Sie haben einen Index für das Feld customer_id definiert. Sie erstellen die fol
     ];
 </code>
 
-Sie fordern dann den Abfrageplanerteil des Explain-Plans an:
+Sie fordern dann den Query Planner-Teil des Explain-Plans an:
 Die Ausgabe des Abfrageplans für diese Pipeline sieht folgendermaßen aus (wobei einige Informationen der Kürze halber weggelassen wurden):
 
 <code>
@@ -307,7 +307,7 @@ Um zu vermeiden, dass die Aggregation den gesamten Datensatz im Speicher manifes
 
 1. Verwenden Sie Indexsortierung. Wenn die Stufe "\$sort" nicht von einer vorangehenden Stufe "\$unwind", "\$group" oder "\$project" abhängt, verschieben Sie die Stufe "\$sort" in die Nähe des Beginns Ihrer Pipeline, um einen Index für die Sortierung anzuvisieren. Die Aggregations-Runtime muss daher keine teure In-Memory-Sortieroperation durchführen. Die Stufe "\$sort" ist nicht unbedingt die erste Stufe in Ihrer Pipeline, da es auch eine Stufe "\$match" geben kann, die denselben Index nutzt. Überprüfen Sie immer den explain-Plan, um sicherzustellen, dass Sie das beabsichtigte Verhalten herbeiführen.
 
-2. Verwenden Sie Limit mit Sort. Wenn Sie nur die erste Teilmenge der Datensätze aus dem sortierten Datensatz benötigen, fügen Sie direkt nach der Stufe \$sort eine Stufe \$limit ein, die die Ergebnisse auf die von Ihnen benötigte feste Menge (z. B. 10) begrenzt. Zur Laufzeit fasst die Aggregations-Engine \$sort und \$limit zu einem einzigen speziellen internen Sortierschritt zusammen, der beide Aktionen gemeinsam durchführt. Der laufende Sortierprozess muss nur die zehn Datensätze im Speicher nachverfolgen, die der gerade ausgeführten Sortier-/Limitregel entsprechen. Er muss nicht den gesamten Datensatz im Speicher halten, um die Sortierung erfolgreich durchzuführen.
+2. Verwenden Sie Limit mit Sort. Wenn Sie nur die erste Teilmenge der Datensätze aus dem sortierten Datensatz benötigen, fügen Sie direkt nach der Stufe \$sort eine Stufe \$limit ein, die die Ergebnisse auf die von Ihnen benötigte feste Menge (z. B. 10) begrenzt. Zur Laufzeit fasst die Aggregations-Engine \$sort und \$limit zu einem einzigen speziellen internen Sortierschritt zusammen, der beide Aktionen gemeinsam durchführt. Der laufende Sortierprozess muss nur die limitierte Menge (im Beispiel oben: 10) im Speicher nachverfolgen, die der gerade ausgeführten Sortier-/Limitregel entsprechen. Er muss nicht den gesamten Datensatz im Speicher halten, um die Sortierung erfolgreich durchzuführen.
 
 3. Reduzieren Sie die zu sortierenden Datensätze. Verschieben Sie die \$sort-Stufe so spät wie möglich in Ihrer Pipeline und stellen Sie sicher, dass frühere Stufen die Anzahl der Datensätze, die in diese späte blockierende \$sort-Stufe fließen, deutlich reduzieren. Diese blockierende Stufe hat weniger Datensätze zu verarbeiten und benötigt weniger RAM.
 
@@ -322,12 +322,12 @@ Um sicherzustellen, dass Sie einen übermäßigen Speicherverbrauch vermeiden, w
 Vermeiden Sie das Abwickeln und Umgruppieren von Dokumenten, nur um Array-Elemente zu verarbeiten
 
 
-2. Avoid Unwinding & Regrouping Documents Just To Process Array Elements
-Sometimes, you need an aggregation pipeline to mutate or reduce an array field's content for each record. For example:
-- You may need to add together all the values in the array into a total field
-- You may need to retain the first and last elements of the array only
-- You may need to retain only one recurring field for each sub-document in the array
-- ...or numerous other array "reduction" scenarios
+2. Es sollte vermieden werden, Dokumente zu entpacken und neu zu gruppieren, nur um Array-Elemente zu verarbeiten
+Manchmal benötigen Sie eine Aggregationspipeline, um den Inhalt eines Array-Feldes für jeden Datensatz zu verändern oder zu reduzieren. Zum Beispiel:
+- Es sollte vielleicht alle Werte im Array zu einem Gesamtfeld addieren werden.
+- Es sollte nur das erste und das letzte Element des Arrays beibehalten werden
+- Es sollte vielleicht nur ein wiederkehrendes Feld für jedes Unterdokument im Array aufbewahren werden
+- ...oder zahlreiche andere Array-Reduktionsszenarien
 
 Um dies zu verdeutlichen, stellen Sie sich eine Sammlung von Einzelhandelsbestellungen vor, bei der jedes Dokument eine Reihe von Produkten enthält, die im Rahmen der Bestellung gekauft wurden, wie im folgenden Beispiel dargestellt:
 
