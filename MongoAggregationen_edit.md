@@ -9,8 +9,8 @@ Praktische MongoDb Aggregationen
     - [Den Explain-Plan verstehen](#den-explain-plan-verstehen)
 - [Überlegungen zur Pipeline-Leistung](#überlegungen-zur-pipeline-leistung)
   - [1. Beachten Sie die Reihenfolge von Streaming und Blocking Stage](#1-beachten-sie-die-reihenfolge-von-streaming-und-blocking-stage)
-  - [\$sort Speicherverbrauch und Risikominderung](#sort-speicherverbrauch-und-schadensbegrenzung)
-  - [\$group-Speicherverbrauch und Risikominderung vielleicht](#group-speicherverbrauch-und-schadensbegrenzung)
+  - [\$sort Speicherverbrauch und Risikominderung](#sort-speicherverbrauch-und-risikominderung)
+  - [\$group-Speicherverbrauch und Risikominderung](#group-speicherverbrauch-und-risikominderung)
 - [Erklärung und Verwendung von Ausdrücken](#erklärung-und-verwendung-von-ausdrücken)
   - [Was erzeugen Ausdrücke?](#was-erzeugen-ausdrücke)
     - [Können alle Stufen Ausdrücke verwenden?](#können-alle-stufen-ausdrücke-verwenden)
@@ -41,7 +41,7 @@ In MongoDB Version 3.4 wurden einige der Nachteile von \$project behoben, indem 
 
 ### Wann sollte man \$set & \$unset verwenden?
 
-\$set & \$unset sollten verwenden werden, wenn die meisten Felder in den Eingabe-Datensätzen beibehalten müssen und eine kleine Teilmenge von Feldern hinzufügen, geändert oder entfernen werden soll.
+\$set & \$unset sollten verwenden werden, wenn die meisten Felder in den Eingabe-Datensätzen beibehalten werden müssen und eine kleine Teilmenge von Feldern hinzufügen, geändert oder entfernen werden soll.
 
 
 <code>
@@ -145,7 +145,7 @@ Wie bei MQL gibt es drei verschiedene Stufen, was und in welcher Ausführlichkei
     db.coll.explain("allPlansExecution").aggregate(pipeline);
 </code>
 
-In den meisten Fällen werden Sie feststellen, dass die Variante executionStats der informativste Modus ist. Sie zeigt nicht nur den Denkprozess des Abfrageplaners, sondern liefert auch tatsächliche Statistiken über den "erfolgreichen" Ausführungsplan (z. B. die insgesamt untersuchten Schlüssel, die insgesamt untersuchten Dokumente usw.). Dies ist jedoch nicht die Standardeinstellung, da zusätzlich zur Formulierung des Abfrageplans auch die Aggregation ausgeführt wird (However, this isn't the default because it actually executes the aggregation in addition to formulating the query plan.). Wenn die Quellenkollektion groß oder die Pipeline suboptimal ist, wird es eine Weile dauern, bis das Ergebnis des Explain-Plans zurückgegeben wird.
+In den meisten Fällen werden Sie feststellen, dass die Variante executionStats der informativste Modus ist. Sie zeigt nicht nur den Denkprozess des Abfrageplaners, sondern liefert auch tatsächliche Statistiken über den "erfolgreichen" Ausführungsplan (z. B. die insgesamt untersuchten Schlüssel, die insgesamt untersuchten Dokumente usw.). Dies ist jedoch nicht die Standardeinstellung, da zusätzlich zur Formulierung des Abfrageplans auch die Aggregation ausgeführt wird  Wenn die Quell-Kollektion groß oder die Pipeline suboptimal ist, wird es eine Weile dauern, bis das Ergebnis des Explain-Plans zurückgegeben wird.
 Es sollte darauf geachtet werden, dass die aggregate()-Funktion auch eine rudimentäre explain-Option bietet, mit der ein explain-Plan erstellt und zurückgegeben werden kann. Diese ist jedoch eingeschränkter und umständlicher in der Anwendung, so dass Sie sie vermeiden sollten.
 
 #### Den Explain-Plan verstehen
@@ -298,7 +298,7 @@ Bei der Ausführung einer Aggregationspipeline zieht die Datenbank-Engine Datens
   
 *Wenn von \$group die Rede ist, schließt dies auch andere, weniger häufig verwendete "Gruppierung"-Stufen ein, nämlich: \$bucket, \$bucketAuto, \$count, \$sortByCount & \$facet (es ist etwas weit hergeholt, \$facet als Gruppenstufe zu bezeichnen, aber im Zusammenhang mit diesem Thema ist es am besten, es so zu sehen)
 
-### \$sort Speicherverbrauch und Schadensbegrenzung
+### \$sort Speicherverbrauch und Risikominderung
 
 Bei naiver Anwendung muss eine \$sort-Stufe alle Eingabedatensätze auf einmal sehen, und daher muss der Hostserver über genügend Kapazität verfügen, um alle Eingabedaten im Speicher zu halten. Der benötigte Speicherplatz hängt stark von der anfänglichen Datengröße und dem Ausmaß ab, in dem die vorherigen Stufen die Größe reduzieren können. Außerdem können mehrere Instanzen der Aggregationspipeline gleichzeitig im Einsatz sein, zusätzlich zu anderen Datenbank-Workloads. Daher erzwingt MongoDB, dass jede Stufe auf 100 MB verbrauchten Arbeitsspeicher begrenzt ist. Die Datenbank gibt einen Fehler aus, wenn sie diese Grenze überschreitet. Um das Hindernis der Speicherbegrenzung zu umgehen, kann die Option allowDiskUse:true für die Gesamtaggregation zur Verarbeitung großer Ergebnisdatensätze gesetzt werden. Folglich wird der Sortiervorgang der Pipeline bei Bedarf auf die Festplatte ausgelagert und die Pipeline wird nicht mehr durch die 100 MB-Grenze eingeschränkt. Der Preis dafür ist jedoch eine deutlich höhere Latenzzeit und die Ausführungszeit wird sich wahrscheinlich um Größenordnungen erhöhen.
 
@@ -311,7 +311,7 @@ Um zu vermeiden, dass die Aggregation den gesamten Datensatz im Speicher manifes
 
 3. Reduzieren Sie die zu sortierenden Datensätze. Verschieben Sie die \$sort-Stufe so spät wie möglich in Ihrer Pipeline und stellen Sie sicher, dass frühere Stufen die Anzahl der Datensätze, die in diese späte blockierende \$sort-Stufe fließen, deutlich reduzieren. Diese blockierende Stufe hat weniger Datensätze zu verarbeiten und benötigt weniger RAM.
 
-### \$group-Speicherverbrauch und Schadensbegrenzung
+### \$group-Speicherverbrauch und Risikominderung
 
 In der Realität konzentrieren sich die meisten Gruppierungsszenarien auf das Sammeln von zusammenfassenden Daten wie Summen, Zählungen, Durchschnittswerten, Höchst- und Tiefstwerten und nicht auf Einzeldaten. In diesen Situationen werden erheblich reduzierte Ergebnisdatensätze erzeugt, die weit weniger Verarbeitungsspeicher benötigen als eine \$sort-Stufe. Im Gegensatz zu vielen Sortierungsszenarien benötigen Gruppierungsoperationen normalerweise nur einen Bruchteil des Arbeitsspeichers des Hosts.
 
