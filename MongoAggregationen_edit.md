@@ -78,7 +78,7 @@ In MongoDB Version 3.4 wurden einige der Nachteile von \$project behoben, indem 
 </code>
 
 #### Wann \$project zu verwenden ist
-Eine \$project-Stufe sollte verwendet werden, wenn sich die gewünschte Form der Ausgabedokumente stark von der Form der Eingabedokumente unterscheidet. Dies ist häufig der Fall, wenn Sie die meisten der ursprünglichen Felder nicht einbeziehen müssen.
+Eine \$project-Stufe sollte verwendet werden, wenn sich die gewünschte Form der Ausgabedokumente stark von der Form der Eingabedokumente unterscheidet. Dies ist häufig der Fall, wenn die meisten der ursprünglichen Felder nicht einbeziehen werden müssen.
 Die Struktur jedes Ausgabedokuments muss sich stark von der Struktur der Eingabedokumente unterscheiden, und Sie müssen viel weniger Originalfelder beibehalten:
 
 <code>
@@ -131,7 +131,7 @@ Um den Explain-Plan für eine Aggregationspipeline anzuzeigen, kann der folgende
     db.coll.explain().aggregate([{"$match": {"name": "Jo"}}]);
 </code>
 
-Wie bei MQL gibt es drei verschiedene Ausführlichkeitsmodi, mit denen Sie einen Explain-Plan erstellen können:
+Wie bei MQL gibt es drei verschiedene Stufen, was und in welcher Ausführlichkeit vom Explain-Plan ausgegeben wird:
 
 <code>
 
@@ -249,7 +249,7 @@ Aus diesem Abfrageplan lassen sich einige aufschlussreiche Erkenntnisse ableiten
 Um die Aggregation zu optimieren, hat die Datenbank-Engine die Pipeline neu geordnet und den zum \$match gehörenden Filter an den Anfang der Pipeline gestellt. 
 Die erste Stufe der datenbankoptimierten Version der Pipeline ist eine interne \$cursor-Stufe.
 Um die Aggregation weiter zu optimieren, hat die Datenbank-Engine die Stufen \$sort und \$limit in eine einzige spezielle interne Sortierstufe zusammengefasst, die beide Aktionen in einem Durchgang ausführen kann.
-Sie fragen nach den Ausführungsstatistiken als Teil des Explain-Plans:
+Die Ausführungsstatistiken als Teil des Explain-Plans aufgerufen werden:
 
 <code>
 
@@ -446,7 +446,7 @@ Aggregationsausdrücke gibt es in einer der drei Hauptvarianten:
 3. Variablen. Der Zugriff erfolgt über eine Zeichenkette mit einem ``$$-Präfix``, gefolgt von dem festen Namen, und fällt in drei Unterkategorien:
 - Kontext-Systemvariablen. Bei Werten, die aus der Systemumgebung stammen, wird nicht jeder Eingabedatensatz, sondern eine Aggregationsstufe verarbeitet.  Beispiele: ``"$$NOW", "$$CLUSTER_TIME"``
 - Marker-Flag-Systemvariablen. Zur Angabe des gewünschten Verhaltens, das an die Aggregations-Pipeline zurückgegeben werden soll.  Beispiele: ``"$$ROOT", "$$REMOVE", "$$PRUNE"``
-- Benutzer-Variablen binden. Zum Speichern von Werten, die Sie mit einem \$let-Operator deklarieren (oder mit der let-Option einer \$lookup-Stufe oder als Option einer \$map- oder \$filter-Stufe).  Beispiele: ``"$$product_name_var", "$$orderIdVal"``
+- Benutzer-Variablen. Zum Speichern von Werten, die Sie mit einem \$let-Operator deklarieren (oder mit der let-Option einer \$lookup-Stufe oder als Option einer \$map- oder \$filter-Stufe).  Beispiele: ``"$$product_name_var", "$$orderIdVal"``
 Sie können diese drei Kategorien von Aggregationsausdrücken bei der Bearbeitung von Eingabedatensätzen kombinieren und so komplexe Vergleiche und Transformationen von Daten durchführen. 
  
  <code>
