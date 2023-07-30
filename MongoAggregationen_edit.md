@@ -2,7 +2,7 @@
 
 - [Praktische MongoDb Aggregationen](#praktische-mongodb-aggregationen)
   - [Definition](#definition)
-  - [Tipps und Grundsätze zur Führung](#tipps-und-grundsätze-zur-führung)
+  - [Tipps und Richtlinien](#tipps-und-richtlinien)
     - [Kompositionsfähigkeit für mehr Produktivität](#kompositionsfähigkeit-für-mehr-produktivität)
     - [Bessere Alternativen zu einer $project -Stage](#bessere-alternativen-zu-einer-project--stage)
       - [Wann sollte man $set \& $unset verwenden?](#wann-sollte-man-set--unset-verwenden)
@@ -46,7 +46,7 @@
 
 ## Definition
 
-Das Aggregations-Framework von MongoDB ermöglicht es Benutzern, eine Analyse- oder Datenverarbeitungs-Workload, die mit einer speziellen Aggregations-Sprache geschrieben wurde, an die Datenbank zu senden und sie anhand der darin enthaltenen Daten auszuführen. Das Framework besteht aus zwei Teilen:
+Das Aggregations-Framework von MongoDB ermöglicht es Benutzern, eine Analyse- oder Datenverarbeitungs-Anfrage, die mit einer speziellen Aggregations-Sprache geschrieben wurde, an die Datenbank zu senden und sie anhand der darin enthaltenen Daten auszuführen. Das Framework besteht aus zwei Teilen:
 
 - Die Aggregations-API, die in den MongoDB-Treiber eingebettet ist und es der Applikation ermöglicht, eine Aggregationsaufgabe, eine sogenannte Pipeline, zu definieren und an die Datenbank zu senden, damit diese sie verarbeitet.
 - Die Runtime (Laufzeitumgebung) für die Aggregation, die in der Datenbank läuft und die Pipeline-Anforderung von der Applikation erhält, um die Pipeline anhand der gespeicherten Daten auszuführen.
@@ -55,7 +55,7 @@ Die Aggregations-Sprache von MongoDB ist Turing-vollständig und in der Lage, je
 
 Die Aggregations-Pipeline-Sprache von MongoDB ist auf datenorientierte Problemlösungen ausgerichtet. Sie ist im Wesentlichen eine deklarative Programmiersprache und keine imperative Programmiersprache. Man kann sie auch als funktionale Programmiersprache und nicht als prozedurale Programmiersprache betrachten. Eine Aggregationspipeline ist eine geordnete Abfolge von deklarativen Anweisungen, die als Stufen bezeichnet werden. Dabei bildet die gesamte Ausgabe einer Stufe die gesamte Eingabe der nächsten Stufe und so weiter, ohne Seiteneffekte.
 
-## Tipps und Grundsätze zur Führung
+## Tipps und Richtlinien
 ### Kompositionsfähigkeit für mehr Produktivität
 
 Eine Aggregationspipeline ist eine geordnete Folge von Anweisungen, die als Stufen bezeichnet werden. Der gesamte Ausgabewert einer Stufe bildet die Eingabe für die nächste Stufe, und so weiter, ohne Nebeneffekte. Pipelines weisen eine hohe Komponierbarkeit auf, bei der Stufen zustandslose, eigenständige Komponenten sind, die in verschiedenen Kombinationen (Pipelines) ausgewählt und zusammengestellt werden können, um spezifische Anforderungen zu erfüllen. Diese Komponierbarkeit fördert iteratives Prototyping, wobei nach jedem Inkrement eine einfache Testdurchführung möglich ist. Mit den Aggregationen von MongoDB können komplexe Probleme in unkomplizierte, einzelne Stufen unterteilt werden, wobei jeder Schritt zuerst isoliert entwickelt und getestet werden kann.
@@ -74,7 +74,7 @@ In MongoDB Version 3.4 wurden einige der Nachteile von \$project behoben, indem 
 
 #### Wann sollte man \$set & \$unset verwenden?
 
-\$set & \$unset sollten verwenden werden, wenn die meisten Felder in den Eingabe-Datensätzen beibehalten werden müssen und eine kleine Teilmenge von Feldern hinzufügen, geändert oder entfernen werden soll.
+\$set & \$unset sollten verwendet werden, wenn die meisten Felder in den Eingabe-Datensätzen beibehalten werden müssen und eine kleine Teilmenge von Feldern hinzufügt, geändert oder entfernen werden soll.
 
 
 Zum Beispiel gibt es eine Sammlung von Kreditkartenzahlungsbelegen, die den folgenden ähneln:
@@ -162,7 +162,7 @@ Die Stufe der Pipeline ist recht lang, und da eine $project-Stufe zum Ändern/Hi
 
 #### Wann \$project zu verwenden ist
 
-Eine \$project-Stufe sollte verwendet werden, wenn sich die gewünschte Form der Ausgabedokumente stark von der Form der Eingabedokumente unterscheidet. Dies ist häufig der Fall, wenn die meisten der ursprünglichen Felder nicht einbeziehen werden müssen.
+Eine \$project-Stufe sollte verwendet werden, wenn sich die gewünschte Form der Ausgabedokumente stark von der Form der Eingabedokumente unterscheidet. Dies ist häufig der Fall, wenn die meisten der ursprünglichen Felder nicht einbezogen werden müssen.
 
 Eine weitere Anforderung ist, dass derselbe Eingabewert für den nächsten Ergebnisbeleg verwendet wird:
 <code>
@@ -435,7 +435,7 @@ Um zu vermeiden, dass die Aggregation den gesamten Datensatz im Speicher manifes
 
 1. Index-Sortierung verwenden. Wenn die \$sort-Stufe nicht von einer \$unwind-, \$group- oder \$project-Stufe abhängt, die ihr vorausgeht, sollte die \$sort-Stufe in die Nähe des Starts der Pipeline verschoben werden, um einen Index für die Sortierung zu erreichen. Die Aggregations-Runtime muss daher keine teure In-Memory-Sortieroperation durchführen. Die Stufe "\$sort" ist nicht unbedingt die erste Stufe in der Pipeline, da es auch eine Stufe "\$match" geben kann, die denselben Index nutzt. Der Erklärungsplan sollte immer überprüft werden, um sicherzustellen, dass das beabsichtigte Verhalten eingeleitet wird.
 
-2. Limit mit Sortierung sollte verwendet werden. Wenn nur die erste Teilmenge von Datensätzen aus dem sortierten Datensatz benötigt wird, sollte eine \$limit-Stufe direkt nach der \$sort-Stufe hinzugefügt werden, die die Ergebnisse auf die von Ihnen benötigte feste Menge begrenzt (z. B. 10). Zur Laufzeit fasst die Aggregations-Engine \$sort und \$limit zu einem einzigen speziellen internen Sortierschritt zusammen, der beide Aktionen gemeinsam durchführt. Der laufende Sortierprozess muss nur die zehn Datensätze im Speicher nachverfolgen, die der gerade ausgeführten Sortier-/Limitregel entsprechen. Er muss nicht den gesamten Datensatz im Speicher halten, um die Sortierung erfolgreich durchzuführen.
+2. Limit mit Sortierung sollte verwendet werden. Wenn nur die erste Teilmenge von Datensätzen aus dem sortierten Datensatz benötigt wird, sollte eine \$limit-Stufe direkt nach der \$sort-Stufe hinzugefügt werden, die die Ergebnisse auf die benötigte feste Menge begrenzt (z. B. 10). Zur Laufzeit fasst die Aggregations-Engine \$sort und \$limit zu einem einzigen speziellen internen Sortierschritt zusammen, der beide Aktionen gemeinsam durchführt. Der laufende Sortierprozess muss nur die zehn Datensätze im Speicher nachverfolgen, die der gerade ausgeführten Sortier-/Limitregel entsprechen. Er muss nicht den gesamten Datensatz im Speicher halten, um die Sortierung erfolgreich durchzuführen.
 
 3. Datensätze zum Sortieren reduzieren. Die \$sort-Stufe sollte so spät wie möglich in die Pipeline verschoben werden, und es sollte sichergestellt werden, dass frühere Stufen die Anzahl der Datensätze, die in diese späte blockierende \$sort-Stufe fließen, deutlich reduzieren. Diese blockierende Stufe hat weniger Datensätze zu verarbeiten und benötigt weniger RAM.
 
@@ -450,9 +450,9 @@ Um einen übermäßigen Speicherverbrauch zu vermeiden, wenn eine $group-Stufe v
 #### Vermeidung des Unwinding und Umgruppierens von Dokumenten, nur um Array-Elemente zu verarbeiten
 
 Manchmal benötigt man eine Aggregationspipeline, um den Inhalt eines Array-Feldes für jeden Datensatz zu verändern oder zu reduzieren. Zum Beispiel::
-- Es sollte vielleicht alle Werte im Array zu einem Gesamtfeld addieren werden.
+- Es sollte alle Werte im Array zu einem Gesamtfeld addiert werden.
 - Es sollte nur das erste und das letzte Element des Arrays beibehalten werden
-- Es sollte vielleicht nur ein wiederkehrendes Feld für jedes Unterdokument im Array aufbewahren werden
+- Es sollte nur ein wiederkehrendes Feld für jedes Unterdokument im Array aufbewahren werden
 - ...oder zahlreiche andere Array-Reduktionsszenarien
 
 Um dies zu verdeutlichen, stelle man sich eine Sammlung von Einzelhandelsbestellungen vor, bei der jedes Dokument eine Reihe von Produkten enthält, die im Rahmen der Bestellung gekauft wurden, wie im folgenden Beispiel gezeigt:
@@ -572,8 +572,8 @@ Zusammenfassend lässt sich sagen: Wenn eine Pipeline eine $match-Stufe nutzt un
 ### Expressions Erklärungen
 #### Aggregation Expression zusammenfassen
 Aggregationsausdrücke gibt es in einer der drei Hauptvarianten:
-1. Operatoren. Der Zugriff erfolgt als Objekt mit einem ``$-Präfix``, gefolgt vom Namen der Operatorfunktion. Der "dollar-operator-name" wird als Hauptschlüssel für das Objekt verwendet.  Beispiele: ``{$arrayElemAt: ...}, {$cond: ...}, {$dateToString: ...}``
-2. Feldpfade. Zugriff als Zeichenkette mit einem \$-Präfix, gefolgt von dem Feldpfad in jedem verarbeiteten Datensatz.  Beispiele: ``"$Konto.sortcode", "$Adressen.Adresse.Stadt"``
+1. Operatoren. Der Zugriff erfolgt als Objekt mit einem ``$ -Präfix``, gefolgt vom Namen der Operatorfunktion. Der "dollar-operator-name" wird als Hauptschlüssel für das Objekt verwendet.  Beispiele: ``{$arrayElemAt: ...}, {$cond: ...}, {$dateToString: ...}``
+2. Feldpfade. Zugriff als Zeichenkette mit einem ``\$ -Präfix``, gefolgt von dem Feldpfad in jedem verarbeiteten Datensatz.  Beispiele: ``"$Konto.sortcode", "$Adressen.Adresse.Stadt"``
 3. Variablen. Der Zugriff erfolgt über eine Zeichenkette mit einem ``$$-Präfix``, gefolgt von dem festen Namen, und fällt in drei Unterkategorien:
 - Kontext-Systemvariablen. Bei Werten, die aus der Systemumgebung stammen, wird nicht jeder Eingabedatensatz, sondern eine Aggregationsstufe verarbeitet.  Beispiele: ``"$$NOW", "$$CLUSTER_TIME"``
 - Marker-Flag-Systemvariablen. Zur Angabe des gewünschten Verhaltens, das an die Aggregations-Pipeline zurückgegeben werden soll.  Beispiele: ``"$$ROOT", "$$REMOVE", "$$PRUNE"``
@@ -590,7 +590,7 @@ Sie können diese drei Kategorien von Aggregationsausdrücken bei der Bearbeitun
 </code>
 
 #### Was erzeugen Ausdrücke?
-Ein Ausdruck kann ein Operator (z. B. ``{$concat: ...}``), eine Variable (z. B. ``"$$ROOT"``) oder ein Feldpfad (z. B. ``"$address"``) sein. In all diesen Fällen ist ein Ausdruck einfach etwas, das dynamisch ein neues JSON/BSON-Datentyp-Element auffüllt und zurückgibt, das eines der folgenden sein kann:
+Ein Ausdruck kann ein Operator (z. B. ``{$concat: ...}``), eine Variable (z. B. ``"$$ROOT"``) oder ein Feldpfad (z. B. ``"$address"``) sein. In all diesen Fällen ist ein Ausdruck einfach etwas, das dynamisch ein neues JSON/BSON-Datentyp-Element auffüllt und zurückgibt und eines der folgenden sein kann:
 - a Number (einschließlich integer, long, float, double, decimal128)
 - a String (UTF-8)
 - a Boolean
@@ -631,7 +631,7 @@ Es sollte beachtet werden, dass es Einschränkungen gibt, wann die Laufzeit von 
 
 MongoDB-Sharding:
 
- // Zweck/ Ziel von Scharding
+ // Zweck/ Ziel von Sharding
 
 -   Horizontale Skalierung der Datenbank, um mehr Daten zu speichern und die Transaktionsdurchsatzrate zu erhöhen
 -   Skalierung der Analysearbeiten, um Aggregationen schneller abzuschließen (möglicherweise werden Aggregationen parallel auf mehreren Shards ausgeführt)
@@ -639,24 +639,24 @@ MongoDB-Sharding:
 
 #### Kurzübersicht über geshardete Cluster
 
-In einem geshardeten Cluster läuft jeder Shard auf einem separaten dedizierte Gruppe von Host-Computern und speichert einen Teil einer Datenmenge. Basierend auf einem Shard-Schlüssel jedes Dokuments (von Benutzer definiert), gruppiert das System Untermengen von Dokumenten zu "Chunks" zusammen. Der Cluster verteilt diese Chunks auf seine Shards. In der gleichen Datenbank können sowohl geshardete als auch ungeshardete Sammlungen gehalten werden. Alle ungeshardeten Sammlungen werden auf einem bestimmten Shard im Cluster gespeichert, das als "Primary Shard" bezeichnet wird.
+In einem geshardeten Cluster läuft jeder Shard auf einer separaten dedizierten Gruppe von Host-Computern und speichert einen Teil einer Datenmenge. Basierend auf einem Shard-Schlüssel jedes Dokuments (vom Benutzer definiert), gruppiert das System Untermengen von Dokumenten zu "Chunks" zusammen. Der Cluster verteilt diese Chunks auf seine Shards. In der gleichen Datenbank können sowohl geshardete als auch ungeshardete Sammlungen gehalten werden. Alle ungeshardeten Sammlungen werden auf einem bestimmten Shard im Cluster gespeichert, das als "Primary Shard" bezeichnet wird.
 
 #### Einschränkungen bei der geshardeten Aggregation
 
-Einige der MongoDB-Stuffen unterstützen nur teilweise geshardete Aggregationen, abhängig von der DB-Version. Diese StuffenStuffen beziehen sich alle auf eine zweite Sammlung zusätzlich zur Pipelinesourcen-Eingabesammlung. In jedem Fall kann die Pipeline eine geshardete Sammlung als ihre Quelle verwenden, aber die zweite referenzierte Sammlung muss ungeshardet sein. Die betroffenen Stuffen und Versionen sind:
+Einige der MongoDB-Stufen unterstützen nur teilweise geshardete Aggregationen, abhängig von der DB-Version. Diese Stufen beziehen sich alle auf eine zweite Sammlung zusätzlich zur Pipelinesourcen-Eingabesammlung. In jedem Fall kann die Pipeline eine geshardete Sammlung als ihre Quelle verwenden, aber die zweite referenzierte Sammlung muss ungeshardet sein. Die betroffenen Stufen und Versionen sind:
 
 -   $lookup: In Versionen vor 5.1 muss die zweite referenzierte Sammlung, mit der zusammengeführt werden soll, ungeshardet sein
 -   $graphLookup: In Versionen vor 5.1 muss die zweite referenzierte Sammlung, mit der zusammengeführt werden soll, ungeshardet sein
--   $out: In allen Versionen muss die zweite referenzierte Sammlung, die als Ziel der Ausgabe der Aggregation verwendet wird, ungeshardet sein. Es kann stattdessen einen $merge-Abschnitt verwenden, um das Aggregationsergebnis in eine geshardete Collection zu schreiben.
+-   $out: In allen Versionen muss die zweite referenzierte Sammlung, die als Ziel der Ausgabe der Aggregation verwendet wird, ungeshardet sein. Es kann stattdessen einen $merge-Abschnitt verwendet werden, um das Aggregationsergebnis in eine geshardete Collection zu schreiben.
 
 
 #### Wo wird eine geshardete Aggregation ausgeführt?
 
-Geshardete Cluster bieten die Möglichkeit, die Antwortzeiten von Aggregationen zu verringern. Dies wird jedoch nicht immer der Fall sein, da bestimmte Arten von Pipelines erfordern, dass erhebliche Datenmenge von mehreren Shards zusammengeführt werden, um weiterverarbeitet zu werden. Die Antwortzeit der Aggregation könnte sich in solchen Fällen in die entgegengesetzte Richtung entwickeln und aufgrund des erheblichen Netzwerkübertragungs- und Marshalling-Overheads deutlich länger dauern.
+Geshardete Cluster bieten die Möglichkeit, die Antwortzeiten von Aggregationen zu verringern. Dies wird jedoch nicht immer der Fall sein, da bestimmte Arten von Pipelines erfordern, dass erhebliche Datenmengen von mehreren Shards zusammengeführt werden, um weiterverarbeitet zu werden. Die Antwortzeit der Aggregation könnte sich in solchen Fällen in die entgegengesetzte Richtung entwickeln und aufgrund des erheblichen Netzwerkübertragungs- und Marshalling-Overheads deutlich länger dauern.
 
 #### Aufteilung der Pipeline zur Laufzeit
 
-Ein geshardeter Cluster wird versuchen, die Stuffen einer Pipeline parallel auf jedem Shard auszuführen, der die erforderlichen Daten enthält. Sortier- und Gruppierungsstuffen ($sort, $bucket, $bucketAuto, $count und $sortByCount) müssen jedoch an allen Daten an einem Ort ("blockierende Stuffen", beschrieben in _Performanceüberlegungen für Pipelines_) ausgeführt werden. Sobald ein blockierendes Stuffen in der Pipeline auftritt, wird das Aggregationssystem die Pipeline an dem Punkt, an dem das blockierende Stuffen auftritt, in zwei Teile aufteilen. Der erste Teil der Pipeline (benannt als "Shards Part" im Explain-Plan) kann parallel auf mehreren Stuffen ausgeführt werden, während der restliche Teil der Pipeline (benannt als "Merge part" im Explain-Plan) an einem Ort ausgeführt wird.
+Ein geshardeter Cluster wird versuchen, die Stufen einer Pipeline parallel auf jedem Shard auszuführen, der die erforderlichen Daten enthält. Sortier- und Gruppierungsstufen ($sort, $bucket, $bucketAuto, $count und $sortByCount) müssen jedoch an allen Daten an einem Ort ("blockierende Stufen", beschrieben in _Performanceüberlegungen für Pipelines_) ausgeführt werden. Sobald ein blockierende Stufe in der Pipeline auftritt, wird das Aggregationssystem die Pipeline an dem Punkt, an dem das blockierende Stufen auftritt, in zwei Teile aufteilen. Der erste Teil der Pipeline (benannt als "Shards Part" im Explain-Plan) kann parallel auf mehreren Stufen ausgeführt werden, während der restliche Teil der Pipeline (benannt als "Merge part" im Explain-Plan) an einem Ort ausgeführt wird.
 
 #### Ausführung des Shards-Teils der gespaltenen Pipeline
 
@@ -666,14 +666,14 @@ Wenn eine MongoDb eine Anfrage zur Ausführung einer Aggregationspipeline erhäl
 
 Die Aggregations-Runtime wendet eine Reihe von Regeln an, um festzulegen, wo der Merger-Teil einer Aggregationspipeline für einen geshardeten Cluster ausgeführt werden soll und ob überhaupt eine Spaltung erforderlich ist. Die Erreichung von entweder der Targeted-Shard-Ausführung (2) oder Mongos-Merge (4) ist in der Regel das bevorzugte Ergebnis für optimale Leistung:
 
-1.  **Primary-Shard Merge**: Die Pipeline enthält einen Stuffe, das auf eine zweite ungeshardete Sammlung verweist:
+1.  **Primary-Shard Merge**: Die Pipeline enthält eine Stufe, das auf eine zweite ungeshardete Sammlung verweist:
 	-   $out oder $lookup und $graphLookup in der MongoDB-Version vor 5.1
-	-   Referenzierung einer ungeshardeten Sammlung von einem $merge-Stuffe oder von $lookup oder $graphLookup (MongoDB 5.1 oder höher)
-2.  **Targeted-Shard-Ausführung**: Die Runtime kann sicherstellen, dass die Pipeline mit der erforderlichen Teilmenge der Quelle-Collection-Daten auf nur einem Shard übereinstimmt. Das Verhalten, das auf einen einzigen Shard festgelegt wird, tritt auch dann auf, wenn die Pipeline ein $merge, $lookup oder $graphLookup-Stuffe enthält, das auf eine zweite geshardete Sammlung verweist, die Dokumente über mehrere Shards verteilt enthält.
+	-   Referenzierung einer ungeshardeten Sammlung von einer $merge-Stufe oder von $lookup oder $graphLookup (MongoDB 5.1 oder höher)
+2.  **Targeted-Shard-Ausführung**: Die Runtime kann sicherstellen, dass die Pipeline mit der erforderlichen Teilmenge der Quell-Collection-Daten auf nur einem Shard übereinstimmt. Das Verhalten, das auf einen einzigen Shard festgelegt wird, tritt auch dann auf, wenn die Pipeline eine $merge, $lookup oder $graphLookup-Stufe enthält, das auf eine zweite geshardete Sammlung verweist, die Dokumente über mehrere Shards verteilt enthält.
 3.  **Any-Shard Merge**: Wenn allowDiskUsage:true konfiguriert ist und eines der folgenden auch zutrifft, muss die Aggregations-Runtime den Merger-Teil der gespaltenen Pipeline auf einem zufällig gewählten Shard ausführen:
-    -   Die Pipeline enthält ein Gruppierungsstuffe
-    -   Die Pipeline enthält ein $sort-Stuffe und ein darauf folgendes blockierendes Stuffe (ein Gruppierungs- oder $sort-Stuffe) tritt später auf
-4. **Mongos Merge**: (Standardverfahren) Wenn der Merger-Teil der Pipeline nur streaming-Stuffen enthält, geht die Runtime davon aus, dass es sicher ist, den verbleibenden Teil der Pipeline dem Mongos zu übergeben.
+    -   Die Pipeline enthält ein Gruppierungsstufe
+    -   Die Pipeline enthält ein $sort-Stufe und ein darauf folgendes blockierendes Stufe (ein Gruppierungs- oder $sort-Stufe) tritt später auf
+4. **Mongos Merge**: (Standardverfahren) Wenn der Merger-Teil der Pipeline nur streaming-Stufen enthält, geht die Runtime davon aus, dass es sicher ist, den verbleibenden Teil der Pipeline dem Mongos zu übergeben.
 
 
 #### Zusammenfassung der Ansätze zur Ausführung geshardeter Pipelines
@@ -686,15 +686,15 @@ Alle empfohlenen Aggregationsoptimierungen, die in den Pipeline-Leistungen darge
 
 1.  Sortierung - Es sollte Indexsortierung verwendet werden: Der Shard-Teil der gespaltenen Pipeline, der auf jedem Shard parallel ausgeführt wird, wird dadurch vermeiden, dass ein In-Memory-Sortierungsvorgang durchgeführt wird.
 2.  Sortierung - Es sollte Limit mit Sortierung verwendet werden:  Die Runtime muss weniger Zwischeneinträge über das Netzwerk übertragen, von jedem Shard, der den Shard-Teil einer gespaltenen Pipeline ausführt, an den Ort, an dem der Merger-Teil der Pipeline ausgeführt wird.
-3.  Sortierung - Die zu sortierenden Einträge sollten verringert werden: Wenn die ersten beiden Punkte unmöglich sind, sollte ein $sort-Stuffe so spät wie möglich verschoben werden.
-4. Gruppierung - Unnötige Gruppierung sollte vermieden werden: Möglichst Array-Operatoren anstelle von $unwind- und $group-Stuffe sollten verwendet werden, um das Splitting der Pipeline in ein unnötig eingeführtes $group-Stuffe zu vermeiden.
+3.  Sortierung - Die zu sortierenden Einträge sollten verringert werden: Wenn die ersten beiden Punkte unmöglich sind, sollte eine $sort-Stufe so spät wie möglich verschoben werden.
+4. Gruppierung - Unnötige Gruppierung sollte vermieden werden: Möglichst Array-Operatoren anstelle von $unwind- und $group-Stufe sollten verwendet werden, um das Splitting der Pipeline in ein unnötig eingeführtes $group-Stufe zu vermeiden.
 5.  Gruppierung - Nur Zusammenfassungsdaten sollten gruppiert werden: Die Runtime muss weniger berechnete Einträge über das Netzwerk von jedem Shard, auf dem der Shard-Teil einer gespaltenen Pipeline ausgeführt wird, an den Standort des Merger-Teils übertragen.
 6.  Es sollte angestrebt werden, dass Filter mit Match früh im Pipeline-Prozess erscheinen, damit die Runtime weniger Einträge an den Standort des Merger-Teils streamen muss.
 
 Es sollten insbesondere für geshardete Cluster zwei weitere Leistungsoptimierungen angestrebt werden:
 
-1.  Aggregationen sollten nach Möglichkeit auf einen Shard zielen, sollten gesucht werden: Wenn möglich, sollte ein $match-Stuffe mit einem Filter auf einen Shard-Schlüsselwert (oder Shard-Schlüsselpräfixwert) hinzugefügt werden.
-2.  Eine gespaltene Pipeline sollte nach Möglichkeit auf einem Mongos zusammengeführt wird, sollten gesucht werden: Wenn eine Pipeline ein $group-Stuffe (oder ein $sort-Stuffe, gefolgt von einem $group- oder $sort-Stuffe) hat, was dazu führt, dass sich die Pipeline teilt, sollte allowDiskUse:true vermieden werden, falls möglich. Dies reduziert die Menge an Zwischendaten, die über das Netzwerk übertragen werden und somit die Latenz.
+1.  Aggregationen sollten nach Möglichkeit auf einen Shard zielen, sollten gesucht werden: Wenn möglich, sollte ein $match-Stufe mit einem Filter auf einen Shard-Schlüsselwert (oder Shard-Schlüsselpräfixwert) hinzugefügt werden.
+2.  Eine gespaltene Pipeline sollte nach Möglichkeit auf einem Mongos zusammengeführt wird, sollten gesucht werden: Wenn eine Pipeline ein $group-Stufe (oder ein $sort-Stufe, gefolgt von einem $group- oder $sort-Stufe) hat, was dazu führt, dass sich die Pipeline teilt, sollte allowDiskUse:true vermieden werden, falls möglich. Dies reduziert die Menge an Zwischendaten, die über das Netzwerk übertragen werden und somit die Latenz.
    
 ### Erweiterte Verwendung von Ausdrücken zur Verarbeitung von Arrays
 
